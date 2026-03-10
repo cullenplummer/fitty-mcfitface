@@ -13,121 +13,210 @@ const ALL_EXERCISES = [
   "Hack Squat", "Back Squat", "Goblet Squat", "Bulgarian Split Squat",
   "Split Squat", "Leg Press", "RDL", "Deadlift", "Sumo Deadlift",
   "Ham Curl", "Leg Curl", "Leg Extension", "Hip Thrust", "Glute Bridge",
-  "Calves", "Calf Raise", "Core", "Plank", "Ab Wheel",
+  "Calves", "Calf Raise", "Cable Crunch", "Russian Twist", "Plank", "Ab Wheel", "Core",
   "Shoulder Press", "Row", "Chest Press",
 ].sort();
 
 // Exercises that support bodyweight mode
 const BODYWEIGHT_EXERCISES = ["Pull-ups", "Chin-ups", "Dips", "Push-ups"];
 
-const PROGRAMS = {
+// Exercises that use timer (seconds held) instead of weight+reps
+const TIMER_EXERCISES = ["Plank"];
+// Exercises that use reps only (no weight)
+const REPS_ONLY_EXERCISES = ["Ab Wheel", "Russian Twist"];
+
+// Flat program definitions referenced by ID
+const ALL_PROGRAMS = {
+  "ppl-push": {
+    id: "ppl-push", name: "Push Day",
+    exercises: [
+      { name: "Bench Press", guide: "3 sets · 5–7 reps" },
+      { name: "Incline Press", guide: "2 sets · 8–12 reps" },
+      { name: "Pec Fly", guide: "2 sets · 10–12 reps" },
+      { name: "OHP", guide: "2 sets · 8–12 reps" },
+      { name: "Lateral Raises", guide: "2 sets · 12–15 reps" },
+      { name: "Tricep Pushdown", guide: "2 sets · 10–12 reps" },
+      { name: "Dips", guide: "2 sets" },
+    ],
+  },
+  "ppl-pull": {
+    id: "ppl-pull", name: "Pull Day",
+    exercises: [
+      { name: "Pull-ups", guide: "3 sets · 6–10 reps" },
+      { name: "T-Bar Row", guide: "2 sets · 6–8 reps" },
+      { name: "Pulldown", guide: "2 sets · 10–12 reps" },
+      { name: "Cable Row", guide: "2 sets · 10–12 reps" },
+      { name: "Rear Delt Fly", guide: "2 sets · 15–20 reps" },
+      { name: "Bicep Curl", guide: "2 sets · 10–12 reps" },
+      { name: "Hammer Curl", guide: "2 sets · 10–12 reps" },
+    ],
+  },
+  "ppl-legs": {
+    id: "ppl-legs", name: "Leg Day",
+    exercises: [
+      { name: "Hack Squat", guide: "3 sets · 10–15 reps" },
+      { name: "Ham Curl", guide: "3 sets · 10–15 reps" },
+      { name: "Leg Extension", guide: "2 sets · 10–15 reps" },
+      { name: "Plank", guide: "3 sets · 60s" },
+      { name: "Calf Raise", guide: "2 sets · 15–20 reps", optional: true },
+    ],
+  },
+  "upper-a": {
+    id: "upper-a", name: "Upper A", subtitle: "Horizontal emphasis",
+    exercises: [
+      { name: "Bench Press", guide: "3 sets · 5–8 reps" },
+      { name: "Barbell Row", guide: "3 sets · 6–10 reps" },
+      { name: "Dips", guide: "2 sets · 10–15 reps" },
+      { name: "Pull-ups", guide: "2 sets · 6–10 reps" },
+      { name: "Lateral Raises", guide: "2 sets · 12–15 reps", optional: true },
+      { name: "Bicep Curl", guide: "2 sets · 10–12 reps" },
+    ],
+  },
+  "upper-b": {
+    id: "upper-b", name: "Upper B", subtitle: "Vertical emphasis",
+    exercises: [
+      { name: "OHP", guide: "3 sets · 6–10 reps" },
+      { name: "Pull-ups", guide: "3 sets · 6–10 reps" },
+      { name: "Incline Press", guide: "2 sets · 8–12 reps" },
+      { name: "T-Bar Row", guide: "2 sets · 8–10 reps" },
+      { name: "Tricep Pushdown", guide: "2 sets · 10–12 reps" },
+      { name: "Bicep Curl", guide: "2 sets · 10–12 reps" },
+    ],
+  },
+  "lower": {
+    id: "lower", name: "Lower Day",
+    exercises: [
+      { name: "Hack Squat", guide: "3 sets · 10–15 reps" },
+      { name: "RDL", guide: "3 sets · 8–10 reps" },
+      { name: "Ham Curl", guide: "2 sets · 10–15 reps" },
+      { name: "Leg Extension", guide: "2 sets · 10–15 reps" },
+      { name: "Plank", guide: "3 sets · 60s" },
+      { name: "Split Squat", guide: "2 sets · 10–12 reps", optional: true },
+    ],
+  },
+  "fb-a": {
+    id: "fb-a", name: "Full Body A", subtitle: "Strength bias",
+    exercises: [
+      { name: "Bench Press", guide: "3 sets · 5–7 reps" },
+      { name: "Hack Squat", guide: "3 sets · 10–12 reps" },
+      { name: "Pull-ups", guide: "3 sets · 6–10 reps" },
+      { name: "RDL", guide: "2 sets · 8–10 reps" },
+      { name: "OHP", guide: "2 sets · 8–12 reps" },
+      { name: "Ham Curl", guide: "2 sets · 10–15 reps" },
+      { name: "Bicep Curl", guide: "2 sets · 10–12 reps" },
+      { name: "Plank", guide: "2 sets · 60s" },
+    ],
+  },
+  "fb-b": {
+    id: "fb-b", name: "Full Body B", subtitle: "Balanced volume",
+    exercises: [
+      { name: "OHP", guide: "3 sets · 6–10 reps" },
+      { name: "Leg Press", guide: "3 sets · 10–15 reps" },
+      { name: "T-Bar Row", guide: "2 sets · 6–8 reps" },
+      { name: "Incline Press", guide: "2 sets · 8–12 reps" },
+      { name: "Leg Extension", guide: "2 sets · 10–15 reps" },
+      { name: "Pulldown", guide: "2 sets · 10–12 reps" },
+      { name: "Hammer Curl", guide: "2 sets · 10–12 reps" },
+      { name: "Cable Crunch", guide: "2 sets · 12–15 reps" },
+    ],
+  },
+  "fb-c": {
+    id: "fb-c", name: "Full Body C", subtitle: "Leanness focus",
+    exercises: [
+      { name: "Bench Press", guide: "3 sets · 6–8 reps" },
+      { name: "Hack Squat", guide: "3 sets · 10–15 reps" },
+      { name: "Barbell Row", guide: "2 sets · 8–10 reps" },
+      { name: "Ham Curl", guide: "2 sets · 10–15 reps" },
+      { name: "Dips", guide: "2 sets · 10–15 reps" },
+      { name: "Rear Delt Fly", guide: "2 sets · 15 reps" },
+      { name: "Lateral Raises", guide: "2 sets · 12 reps" },
+      { name: "Bicep Curl", guide: "2 sets · 12–15 reps" },
+      { name: "Plank", guide: "2 sets · 60s" },
+    ],
+  },
+  "arms": {
+    id: "arms", name: "Arms",
+    exercises: [
+      { name: "Bicep Curl", guide: "3 sets · 10–12 reps" },
+      { name: "Hammer Curl", guide: "3 sets · 10–12 reps" },
+      { name: "Tricep Pushdown", guide: "3 sets · 10–12 reps" },
+      { name: "Overhead Tricep Extension", guide: "3 sets · 10–12 reps" },
+      { name: "Lateral Raises", guide: "2 sets · 12–15 reps" },
+    ],
+  },
+  "core": {
+    id: "core", name: "Core Crusher",
+    exercises: [
+      { name: "Plank", guide: "3 sets" },
+      { name: "Ab Wheel", guide: "3 sets · reps" },
+      { name: "Cable Crunch", guide: "3 sets" },
+      { name: "Russian Twist", guide: "3 sets" },
+    ],
+  },
+  "lauren-fb1": {
+    id: "lauren-fb1", name: "Full Body 1",
+    exercises: [
+      { name: "Goblet Squat" },
+      { name: "RDL" },
+      { name: "Chest Press" },
+      { name: "Pulldown" },
+    ],
+  },
+  "lauren-fb2": {
+    id: "lauren-fb2", name: "Full Body 2",
+    exercises: [
+      { name: "Deadlift" },
+      { name: "Split Squat" },
+      { name: "Shoulder Press" },
+      { name: "Row" },
+    ],
+  },
+};
+
+// Folder-based layout for Programs screen
+const PROGRAM_FOLDERS = {
   Cullen: [
     {
-      id: "ppl-push",
-      name: "PPL · Push",
-      exercises: [
-        { name: "Bench Press" },
-        { name: "Incline Press" },
-        { name: "Pec Fly" },
-        { name: "OHP" },
-        { name: "Lateral Raises" },
-        { name: "Tricep Pushdown" },
-        { name: "Dips" },
-      ],
+      id: "ppl", label: "PPL", icon: "🔄", subtitle: "Push · Pull · Legs",
+      programs: ["ppl-push", "ppl-pull", "ppl-legs"],
     },
     {
-      id: "ppl-pull",
-      name: "PPL · Pull",
-      exercises: [
-        { name: "Pull-ups" },
-        { name: "Pulldown" },
-        { name: "Barbell Row" },
-        { name: "T-Bar Row" },
-        { name: "Lat Row" },
-        { name: "Rear Delt Fly" },
-        { name: "Bicep Curl" },
-      ],
+      id: "upperlower", label: "Upper / Lower", icon: "⚖️", subtitle: "Upper A · Upper B · Lower",
+      programs: ["upper-a", "upper-b", "lower"],
     },
     {
-      id: "ppl-legs",
-      name: "PPL · Legs",
-      exercises: [
-        { name: "RDL" },
-        { name: "Hack Squat" },
-        { name: "Leg Press" },
-        { name: "Ham Curl" },
-        { name: "Leg Extension" },
-      ],
+      id: "fullbody", label: "Full Body", icon: "💥", subtitle: "3 programs",
+      programs: ["fb-a", "fb-b", "fb-c"],
     },
     {
-      id: "upper-a",
-      name: "Upper A",
-      subtitle: "Horizontal emphasis",
-      exercises: [
-        { name: "Bench Press", guide: "3 sets · 4–8 reps" },
-        { name: "Pull-ups", guide: "3 sets · 6–10 reps" },
-        { name: "Barbell Row", guide: "2–3 sets" },
-        { name: "Dips", guide: "3 sets" },
-        { name: "Bicep Curl", guide: "2–3 sets" },
-        { name: "Lateral Raises", guide: "2 sets", optional: true },
-      ],
+      id: "arms", label: "Arms", icon: "💪", subtitle: "5 exercises",
+      programs: ["arms"],
     },
     {
-      id: "upper-b",
-      name: "Upper B",
-      subtitle: "Vertical emphasis",
-      exercises: [
-        { name: "OHP", guide: "3 sets" },
-        { name: "Pull-ups", guide: "3 sets" },
-        { name: "Incline Press", guide: "3 sets" },
-        { name: "T-Bar Row", guide: "3 sets" },
-        { name: "Tricep Pushdown", guide: "2–3 sets" },
-        { name: "Bicep Curl", guide: "2–3 sets" },
-      ],
-    },
-    {
-      id: "lower",
-      name: "Lower Day",
-      exercises: [
-        { name: "Hack Squat", guide: "3 sets" },
-        { name: "RDL", guide: "3 sets" },
-        { name: "Ham Curl", guide: "3 sets" },
-        { name: "Leg Extension", guide: "3 sets" },
-        { name: "Calves / Split Squat", guide: "1–2 sets", optional: true },
-      ],
-    },
-    {
-      id: "core",
-      name: "Core",
-      exercises: [
-        { name: "Plank", guide: "3 sets" },
-        { name: "Ab Wheel", guide: "3 sets" },
-        { name: "Core", guide: "3 sets" },
-      ],
+      id: "core", label: "Core Crusher", icon: "🧱", subtitle: "4 exercises",
+      programs: ["core"],
     },
   ],
   Lauren: [
     {
-      id: "lauren-fb1",
-      name: "Full Body 1",
-      exercises: [
-        { name: "Goblet Squat" },
-        { name: "RDL" },
-        { name: "Chest Press" },
-        { name: "Pulldown" },
-      ],
+      id: "lauren-fb", label: "Full Body", icon: "💥", subtitle: "2 programs",
+      programs: ["lauren-fb1", "lauren-fb2"],
     },
     {
-      id: "lauren-fb2",
-      name: "Full Body 2",
-      exercises: [
-        { name: "Deadlift" },
-        { name: "Split Squat" },
-        { name: "Shoulder Press" },
-        { name: "Row" },
-      ],
+      id: "core", label: "Core Crusher", icon: "🧱", subtitle: "4 exercises",
+      programs: ["core"],
     },
   ],
+};
+
+// Keep flat PROGRAMS for backwards compat (streak, history lookups)
+const PROGRAMS = {
+  Cullen: Object.values(ALL_PROGRAMS).filter(p =>
+    PROGRAM_FOLDERS.Cullen.flatMap(f => f.programs).includes(p.id)
+  ),
+  Lauren: Object.values(ALL_PROGRAMS).filter(p =>
+    PROGRAM_FOLDERS.Lauren.flatMap(f => f.programs).includes(p.id)
+  ),
 };
 
 // Custom program template — exercises built fresh each session
@@ -140,6 +229,97 @@ const CUSTOM_PROGRAM = {
 };
 
 const CARDIO_TYPES = ["Walk", "Run", "Bike", "Elliptical", "Swim"];
+// ── THEMES ────────────────────────────────────────────────────────────────────
+const THEMES = {
+  default: {
+    name: "Default",
+    emoji: "🏋️",
+    vars: {
+      "--bg": "#F7F5F2", "--surface": "#FFFFFF", "--border": "#E8E4DF",
+      "--text": "#1A1714", "--muted": "#9A9490", "--accent": "#E8500A",
+      "--accent-light": "#FFF0EA", "--accent2": "#2D6A4F",
+      "--green": "#2D6A4F", "--green-light": "#EAF4EF",
+    },
+    greeting: (name) => `Let's get it, ${name} 💪`,
+    startLabel: "Let's Go 🚀",
+    finishLabel: "DONE. LET'S GO! 🔥",
+    streakSuffix: "-day streak",
+    emptyWorkout: "Let's build something 🔨",
+    summaryTitle: "Workout done!",
+  },
+  bobsburgers: {
+    name: "Bob's Burgers",
+    emoji: "🍔",
+    vars: {
+      "--bg": "#FFF8F0", "--surface": "#FFFFFF", "--border": "#F2D9BE",
+      "--text": "#3D1C00", "--muted": "#B07040", "--accent": "#D44000",
+      "--accent-light": "#FFEEDD", "--accent2": "#5B8C3E",
+      "--green": "#5B8C3E", "--green-light": "#E8F5E0",
+    },
+    greeting: (name) => `Order up, ${name}! 🍔`,
+    startLabel: "Fire Up the Grill 🔥",
+    finishLabel: "BURGER OF THE DAY COMPLETE 🍔",
+    streakSuffix: "-burger streak",
+    emptyWorkout: "The grill is empty! Add exercises 🍔",
+    summaryTitle: "That's the stuff!",
+  },
+  puertorico: {
+    name: "Puerto Rico",
+    emoji: "🇵🇷",
+    vars: {
+      "--bg": "#F5F0FF", "--surface": "#FFFFFF", "--border": "#D4C5F0",
+      "--text": "#1A0A3D", "--muted": "#7B6AA0", "--accent": "#B91C8C",
+      "--accent-light": "#FFE8F8", "--accent2": "#0A7B3E",
+      "--green": "#0A7B3E", "--green-light": "#E0F5EA",
+    },
+    greeting: (name) => `¡Wepa ${name}! 🇵🇷`,
+    startLabel: "¡Vamos! 🌴",
+    finishLabel: "¡WEPA! WORKOUT DONE! 🇵🇷",
+    streakSuffix: "-day racha",
+    emptyWorkout: "¡Añade ejercicios para empezar! 💃",
+    summaryTitle: "¡Wepa! Workout done!",
+  },
+  nightmode: {
+    name: "Midnight Grind",
+    emoji: "🌙",
+    vars: {
+      "--bg": "#0F0F14", "--surface": "#1A1A24", "--border": "#2A2A3A",
+      "--text": "#E8E8F0", "--muted": "#6A6A80", "--accent": "#7C3AED",
+      "--accent-light": "#2D1B69", "--accent2": "#059669",
+      "--green": "#059669", "--green-light": "#064E3B",
+    },
+    greeting: (name) => `Night grind, ${name} 🌙`,
+    startLabel: "Enter the Void 🌑",
+    finishLabel: "YOU CONQUERED THE NIGHT 🌙",
+    streakSuffix: "-night streak",
+    emptyWorkout: "The darkness awaits your gains 🌑",
+    summaryTitle: "Crushed it.",
+  },
+  beachvibes: {
+    name: "Beach Vibes",
+    emoji: "🏖️",
+    vars: {
+      "--bg": "#F0F9FF", "--surface": "#FFFFFF", "--border": "#BAE6FD",
+      "--text": "#0C2340", "--muted": "#5B9DC0", "--accent": "#0284C7",
+      "--accent-light": "#E0F2FE", "--accent2": "#0D9488",
+      "--green": "#0D9488", "--green-light": "#CCFBF1",
+    },
+    greeting: (name) => `Surf's up, ${name}! 🏄`,
+    startLabel: "Catch That Wave 🌊",
+    finishLabel: "SHREDDED! 🏄‍♂️",
+    streakSuffix: "-day wave",
+    emptyWorkout: "No waves yet! Add exercises 🌊",
+    summaryTitle: "Stoked! Workout done!",
+  },
+};
+
+const REST_TIMER_OPTIONS = [
+  { label: "1:00", seconds: 60, emoji: "⚡" },
+  { label: "1:30", seconds: 90, emoji: "💪" },
+  { label: "2:00", seconds: 120, emoji: "🐢" },
+];
+
+
 const CARDIO_DURATIONS = [15, 20, 30, 45, 60];
 
 // ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
@@ -153,7 +333,7 @@ const save = (key, val) => localStorage.setItem(key, JSON.stringify(val));
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const today = () => new Date().toISOString().split("T")[0];
-const fmtDate = (d) => new Date(d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 const elapsed = (start) => {
   const s = Math.floor((Date.now() - start) / 1000);
   const m = Math.floor(s / 60);
@@ -201,21 +381,30 @@ const css = `
     --radius-sm: 8px;
   }
 
-  html, body, #root { height: 100%; background: var(--bg); }
+  html, body, #root { height: 100%; width: 100%; background: var(--bg); }
 
   body {
     font-family: 'DM Sans', sans-serif;
     color: var(--text);
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   .app {
+    width: 100%;
     max-width: 430px;
     margin: 0 auto;
     min-height: 100%;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
+  }
+
+  .bottom-nav {
+    width: 100%;
   }
 
   /* SCREENS */
@@ -743,6 +932,138 @@ const css = `
   .nav-item.active { color: var(--accent); }
   .nav-icon { font-size: 22px; }
 
+
+  /* THEME */
+  [data-theme] { transition: background 0.3s, color 0.3s; }
+
+  /* MENU */
+  .menu-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 200;
+    display: flex; justify-content: flex-end;
+  }
+  .menu-panel {
+    background: var(--bg);
+    width: 280px;
+    height: 100%;
+    padding: 48px 24px 40px;
+    display: flex; flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+  }
+  .menu-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; margin-bottom: 32px; }
+  .menu-section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--muted); margin-bottom: 10px; margin-top: 24px;
+  }
+  .theme-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    background: var(--surface);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .theme-btn.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 700; }
+  .theme-btn-emoji { font-size: 20px; }
+
+  /* REST TIMER SELECTION SCREEN */
+  .rest-select-screen { flex: 1; display: flex; flex-direction: column; }
+  .rest-hero { padding: 32px 20px 24px; text-align: center; }
+  .rest-hero-icon { font-size: 52px; margin-bottom: 12px; }
+  .rest-hero-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 26px; margin-bottom: 6px; }
+  .rest-hero-sub { font-size: 14px; color: var(--muted); }
+  .rest-options { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+  .rest-option-btn {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 22px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.12s;
+  }
+  .rest-option-btn:active { transform: scale(0.98); }
+  .rest-option-btn.selected { border-color: var(--accent); background: var(--accent-light); }
+  .rest-option-emoji { font-size: 26px; }
+  .rest-option-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; color: var(--accent); }
+  .rest-option-desc { font-size: 13px; color: var(--muted); }
+  .rest-start-btn { margin: 24px 20px 0; }
+
+  /* REST TIMER WIDGET */
+  .rest-timer-bar {
+    background: var(--accent-light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+  }
+  .rest-timer-bar.running { border-color: var(--accent); }
+  .rest-timer-ring { font-size: 20px; }
+  .rest-timer-info { flex: 1; }
+  .rest-timer-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .rest-timer-count { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--accent); }
+  .rest-timer-done { font-size: 12px; color: var(--green); font-weight: 700; }
+
+  /* TIMER EXERCISE (Plank etc) */
+  .timer-ex-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
+  .timer-ex-input {
+    flex: 1;
+    padding: 14px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    background: var(--bg);
+    color: var(--text);
+    text-align: center;
+    -moz-appearance: textfield;
+    width: 100%;
+  }
+  .timer-ex-input::-webkit-inner-spin-button { display: none; }
+  .timer-ex-input:focus { outline: none; border-color: var(--accent); background: white; }
+  .timer-preset-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .timer-preset-btn {
+    padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.12s;
+  }
+  .timer-preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* HOME MENU BUTTON */
+  .home-menu-btn {
+    position: absolute;
+    top: 20px; right: 20px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    z-index: 5;
+  }
+
+
+  /* STATS SCREEN */
+  .stats-tab-bar { display: flex; border-bottom: 1px solid var(--border); }
+  .stats-tab { flex: 1; padding: 12px 8px; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; }
+  .stats-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .pr-card { display: flex; align-items: center; gap: 14px; }
+
   .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
   .empty-icon { font-size: 40px; margin-bottom: 12px; }
   .empty-text { font-size: 14px; }
@@ -769,8 +1090,10 @@ const css = `
 // ── ICONS ──────────────────────────────────────────────────────────────────────
 const CARDIO_ICONS = { Walk: "🚶", Run: "🏃", Bike: "🚴", Elliptical: "⚡", Swim: "🏊" };
 const PROG_ICONS = {
-  "ppl-push": "💪", "ppl-pull": "🔃", "ppl-legs": "🦵",
-  "upper-a": "📐", "upper-b": "⬆️", "lower": "🦿", "core": "🧱",
+  "ppl-push": "🔥", "ppl-pull": "🔃", "ppl-legs": "🦵",
+  "upper-a": "📐", "upper-b": "⬆️", "lower": "🏋️",
+  "fb-a": "💥", "fb-b": "⚡", "fb-c": "🔥",
+  "arms": "💪", "core": "🧱",
   "lauren-fb1": "⚡", "lauren-fb2": "🔥",
   "custom": "✏️",
 };
@@ -809,16 +1132,30 @@ export default function App() {
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [summaryData, setSummaryData] = useState(null);
   const [histDetail, setHistDetail] = useState(null);
+  const [editingSession, setEditingSession] = useState(null);
   const [tab, setTab] = useState("home");
-  // For mid-workout cardio sheet
-  const [showWorkoutCardio, setShowWorkoutCardio] = useState(false);
+  const [theme, setTheme] = useState(() => load("theme", "default"));
+  const [showMenu, setShowMenu] = useState(false);
+  // Program chosen but waiting for rest timer pick
+  const [pendingProgram, setPendingProgram] = useState(null);
+  const [restTimerSecs, setRestTimerSecs] = useState(() => load("restTimerSecs", 90));
 
   useEffect(() => { save("sessions", sessions); }, [sessions]);
   useEffect(() => { save("strengthSets", strengthSets); }, [strengthSets]);
   useEffect(() => { save("cardioLogs", cardioLogs); }, [cardioLogs]);
+  useEffect(() => { save("theme", theme); }, [theme]);
+  useEffect(() => { save("restTimerSecs", restTimerSecs); }, [restTimerSecs]);
+
+  // Apply theme CSS vars
+  useEffect(() => {
+    const t = THEMES[theme] || THEMES.default;
+    const root = document.documentElement;
+    Object.entries(t.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+  }, [theme]);
 
   const goHome = () => { setScreen("home"); setTab("home"); };
   const goHistory = () => { setScreen("history"); setTab("history"); };
+  const goStats = () => { setScreen("stats"); setTab("stats"); };
 
   const mySets = strengthSets.filter(s => s.user === user);
   const mySessions = sessions.filter(s => s.user === user);
@@ -833,7 +1170,7 @@ export default function App() {
   ];
   const streak = calcStreak(allActivityForStreak, user);
 
-  const startWorkout = (prog) => {
+  const startWorkout = (prog, timerSecs) => {
     const sid = `s${Date.now()}`;
     setActiveWorkout({
       sessionId: sid,
@@ -842,9 +1179,17 @@ export default function App() {
       sets: {},
       activeExercise: null,
       exercises: prog.exercises.map(e => e.name),
-      cardioFinisher: null, // { type, duration }
+      cardioFinisher: null,
+      restTimerSecs: timerSecs || restTimerSecs,
     });
+    setPendingProgram(null);
     setScreen("workout");
+  };
+
+  // Called when user picks a program — go to rest timer select first
+  const pickProgram = (prog) => {
+    setPendingProgram(prog);
+    setScreen("restSelect");
   };
 
   const finishWorkout = () => {
@@ -897,11 +1242,50 @@ export default function App() {
     setScreen("summary");
   };
 
+  const deleteSession = (sessionId) => {
+    setSessions(prev => prev.filter(s => s.sessionId !== sessionId));
+    setStrengthSets(prev => prev.filter(s => s.sessionId !== sessionId));
+    setHistDetail(null);
+    setScreen("history");
+  };
+
+  const updateSession = (updatedSession) => {
+    // Recompute totals from sets
+    const allSets = Object.values(updatedSession.sets).flat();
+    const totalSets = allSets.length;
+    const totalReps = allSets.reduce((a, s) => a + (s.reps || 0), 0);
+    const totalVol = allSets.reduce((a, s) => a + (!s.isBodyweight ? (s.weight || 0) * (s.reps || 0) : 0), 0);
+    const recomputed = { ...updatedSession, totalSets, totalReps, totalVol };
+    setSessions(prev => prev.map(s => s.sessionId === recomputed.sessionId ? recomputed : s));
+    // Rebuild strengthSets for this session
+    const newSets = [];
+    for (const [ex, sets] of Object.entries(recomputed.sets)) {
+      sets.forEach(s => newSets.push({
+        user: recomputed.user,
+        sessionId: recomputed.sessionId,
+        date: recomputed.date,
+        program: recomputed.program,
+        exercise: ex,
+        weight: s.weight,
+        reps: s.reps,
+        isBodyweight: s.isBodyweight || false,
+      }));
+    }
+    setStrengthSets(prev => [
+      ...prev.filter(s => s.sessionId !== recomputed.sessionId),
+      ...newSets,
+    ]);
+    setHistDetail(recomputed);
+    setEditingSession(null);
+  };
+
   const getLastSetWeight = (exerciseName) => {
     const exSets = mySets.filter(s => s.exercise === exerciseName);
     if (!exSets.length) return "";
     return exSets[exSets.length - 1].weight;
   };
+
+  const currentTheme = THEMES[theme] || THEMES.default;
 
   if (!user) {
     return (
@@ -921,7 +1305,9 @@ export default function App() {
             user={user}
             streak={streak}
             recentSessions={recentSessions}
+            theme={currentTheme}
             onSwitchUser={() => setUser(null)}
+            onMenu={() => setShowMenu(true)}
             onStartPrograms={() => { setScreen("programs"); setTab("programs"); }}
             onViewHistory={() => goHistory()}
             onViewDetail={(s) => { setHistDetail(s); setScreen("histDetail"); }}
@@ -930,10 +1316,21 @@ export default function App() {
         {screen === "programs" && (
           <ProgramsScreen
             user={user}
-            programs={PROGRAMS[user]}
             onBack={goHome}
-            onStart={startWorkout}
+            onStart={pickProgram}
             onCardio={() => setScreen("cardio")}
+          />
+        )}
+        {screen === "restSelect" && pendingProgram && (
+          <RestTimerSelectScreen
+            program={pendingProgram}
+            defaultSecs={restTimerSecs}
+            user={user}
+            onBack={() => { setPendingProgram(null); setScreen("programs"); }}
+            onStart={(secs) => {
+              if (secs !== null) setRestTimerSecs(secs);
+              startWorkout(pendingProgram, secs);
+            }}
           />
         )}
         {screen === "workout" && activeWorkout && (
@@ -942,23 +1339,37 @@ export default function App() {
             setWorkout={setActiveWorkout}
             getLastSetWeight={getLastSetWeight}
             mySets={mySets}
+            theme={currentTheme}
             onFinish={finishWorkout}
             onBack={() => { setActiveWorkout(null); setScreen("programs"); }}
           />
         )}
         {screen === "summary" && summaryData && (
-          <SummaryScreen data={summaryData} user={user} onDone={goHome} />
+          <SummaryScreen data={summaryData} user={user} theme={currentTheme} onDone={goHome} />
         )}
         {screen === "history" && (
           <HistoryScreen
-            sessions={mySessions}
-            cardio={myCardio}
+            allSessions={sessions}
+            allCardio={cardioLogs}
             onBack={goHome}
             onDetail={(s) => { setHistDetail(s); setScreen("histDetail"); }}
           />
         )}
+        {screen === "stats" && (
+          <StatsScreen
+            sessions={sessions}
+            strengthSets={strengthSets}
+            user={user}
+            onBack={goHome}
+          />
+        )}
         {screen === "histDetail" && histDetail && (
-          <HistDetailScreen session={histDetail} onBack={() => setScreen("history")} />
+          <HistDetailScreen
+            session={histDetail}
+            onBack={() => setScreen("history")}
+            onDelete={deleteSession}
+            onUpdate={updateSession}
+          />
         )}
         {screen === "cardio" && (
           <CardioScreen
@@ -971,13 +1382,22 @@ export default function App() {
             }}
           />
         )}
-        {screen !== "workout" && screen !== "summary" && screen !== "histDetail" && (
+        {screen !== "workout" && screen !== "summary" && screen !== "histDetail" && screen !== "restSelect" && (
           <BottomNav tab={tab} onTab={(t) => {
             setTab(t);
             if (t === "home") goHome();
             if (t === "programs") setScreen("programs");
             if (t === "history") goHistory();
+            if (t === "stats") goStats();
           }} />
+        )}
+        {showMenu && (
+          <ThemeMenu
+            theme={theme}
+            onTheme={(t) => { setTheme(t); }}
+            onClose={() => setShowMenu(false)}
+            onSwitchUser={() => { setShowMenu(false); setUser(null); }}
+          />
         )}
       </div>
     </>
@@ -989,7 +1409,7 @@ function UserSelect({ onSelect }) {
   return (
     <div className="user-select">
       <div className="user-select-logo">LIFT</div>
-      <div className="user-select-sub">Who's training today?</div>
+      <div className="user-select-sub">Who&apos;s training today?</div>
       {["Cullen", "Lauren"].map(u => (
         <button key={u} className="user-btn" onClick={() => onSelect(u)}>
           <div className="user-avatar">{u[0]}</div>
@@ -1001,25 +1421,26 @@ function UserSelect({ onSelect }) {
 }
 
 // ── HOME ──────────────────────────────────────────────────────────────────────
-function HomeScreen({ user, streak, recentSessions, onSwitchUser, onStartPrograms, onViewHistory, onViewDetail }) {
+function HomeScreen({ user, streak, recentSessions, theme, onSwitchUser, onMenu, onStartPrograms, onViewHistory, onViewDetail }) {
   return (
-    <div className="screen">
+    <div className="screen" style={{ position: "relative" }}>
+      <div className="home-menu-btn" onClick={onMenu}>☰</div>
       <div className="screen-scroll">
         <div className="home-hero">
-          <div className="home-greeting">Good {getTimeOfDay()}</div>
+          <div className="home-greeting" style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>{theme.greeting(user)}</div>
           <div className="home-name">{user}</div>
           {streak > 0
-            ? <div className="streak-pill">🔥 {streak}-day streak</div>
-            : <div className="streak-pill" style={{ background: "#f5f5f5", color: "#999" }}>Start your streak</div>
+            ? <div className="streak-pill">🔥 {streak}{theme.streakSuffix}</div>
+            : <div className="streak-pill" style={{ background: "#f5f5f5", color: "#999" }}>Start your streak 💪</div>
           }
         </div>
         <div style={{ padding: "0 20px" }}>
-          <button className="btn btn-primary" onClick={onStartPrograms}>Start Workout</button>
+          <button className="btn btn-primary" onClick={onStartPrograms}>{theme.startLabel}</button>
           <div className="section-label">Recent</div>
           {recentSessions.length === 0 ? (
             <div className="empty-state" style={{ padding: "24px 0" }}>
               <div className="empty-icon">🏋️</div>
-              <div className="empty-text">No workouts yet. Let's go!</div>
+              <div className="empty-text">No workouts yet. Let&apos;s go!</div>
             </div>
           ) : recentSessions.map((s, i) => (
             <div key={i} className="recent-item" onClick={() => onViewDetail(s)}>
@@ -1050,61 +1471,118 @@ function getTimeOfDay() {
 }
 
 // ── PROGRAMS ──────────────────────────────────────────────────────────────────
-function ProgramsScreen({ user, programs, onBack, onStart, onCardio }) {
+function ProgramsScreen({ user, onBack, onStart, onCardio }) {
+  const [openFolder, setOpenFolder] = useState(null);
+  const folders = PROGRAM_FOLDERS[user] || [];
+
+  // If a folder has only 1 program, start it directly; otherwise open folder
+  const handleFolderTap = (folder) => {
+    if (folder.programs.length === 1) {
+      onStart(ALL_PROGRAMS[folder.programs[0]]);
+    } else {
+      setOpenFolder(openFolder === folder.id ? null : folder.id);
+    }
+  };
+
   return (
     <div className="screen">
-      <div className="header">
-        <button className="header-back" onClick={onBack}>←</button>
-        <div>
-          <div className="header-title">Programs</div>
-          <div className="header-sub">{user}</div>
-        </div>
-      </div>
-      <div className="screen-scroll">
-        {/* Custom program — always first */}
-        <div className="section-label" style={{ marginTop: 8 }}>Custom</div>
-        <div className="prog-card custom-card" onClick={() => onStart(CUSTOM_PROGRAM)}>
-          <div className="prog-icon" style={{ background: "#f0f0f0" }}>✏️</div>
-          <div style={{ flex: 1 }}>
-            <div className="prog-name">Custom Workout</div>
-            <div className="prog-sub">Build your own from the exercise library</div>
-          </div>
-          <div className="prog-arrow">›</div>
-        </div>
-
-        <div className="section-label">Strength Programs</div>
-        {programs.map(p => (
-          <div key={p.id} className="prog-card" onClick={() => onStart(p)}>
-            <div className="prog-icon">{PROG_ICONS[p.id] || "💪"}</div>
-            <div style={{ flex: 1 }}>
-              <div className="prog-name">{p.name}</div>
-              <div className="prog-sub">
-                {p.subtitle ? p.subtitle + " · " : ""}{p.exercises.length} exercises
+      {openFolder ? (
+        // Sub-screen: programs inside a folder
+        (() => {
+          const folder = folders.find(f => f.id === openFolder);
+          return (
+            <>
+              <div className="header">
+                <button className="header-back" onClick={() => setOpenFolder(null)}>←</button>
+                <div>
+                  <div className="header-title">{folder.icon} {folder.label}</div>
+                  <div className="header-sub">{user}</div>
+                </div>
               </div>
+              <div className="screen-scroll">
+                {folder.programs.map(pid => {
+                  const p = ALL_PROGRAMS[pid];
+                  if (!p) return null;
+                  return (
+                    <div key={p.id} className="prog-card" onClick={() => onStart(p)}>
+                      <div className="prog-icon">{PROG_ICONS[p.id] || "💪"}</div>
+                      <div style={{ flex: 1 }}>
+                        <div className="prog-name">{p.name}</div>
+                        <div className="prog-sub">
+                          {p.subtitle ? p.subtitle + " · " : ""}{p.exercises.length} exercises
+                        </div>
+                      </div>
+                      <div className="prog-arrow">›</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()
+      ) : (
+        // Main programs list with folders
+        <>
+          <div className="header">
+            <button className="header-back" onClick={onBack}>←</button>
+            <div>
+              <div className="header-title">Workout</div>
+              <div className="header-sub">{user}</div>
             </div>
-            <div className="prog-arrow">›</div>
           </div>
-        ))}
+          <div className="screen-scroll">
+            <div className="section-label" style={{ marginTop: 8 }}>Custom</div>
+            <div className="prog-card custom-card" onClick={() => onStart(CUSTOM_PROGRAM)}>
+              <div className="prog-icon" style={{ background: "#f0f0f0" }}>✏️</div>
+              <div style={{ flex: 1 }}>
+                <div className="prog-name">Custom Workout</div>
+                <div className="prog-sub">Build your own from the exercise library</div>
+              </div>
+              <div className="prog-arrow">›</div>
+            </div>
 
-        <div className="section-label">Cardio</div>
-        <div className="prog-card cardio-card" onClick={onCardio}>
-          <div className="prog-icon">🏃</div>
-          <div style={{ flex: 1 }}>
-            <div className="prog-name">Cardio Session</div>
-            <div className="prog-sub">Walk, Run, Bike, Elliptical, Swim</div>
+            <div className="section-label">Strength Programs</div>
+            {folders.map(folder => (
+              <div key={folder.id}>
+                <div
+                  className="prog-card"
+                  style={{ borderLeft: "3px solid var(--accent)" }}
+                  onClick={() => handleFolderTap(folder)}
+                >
+                  <div className="prog-icon">{folder.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="prog-name">{folder.label}</div>
+                    <div className="prog-sub">{folder.subtitle}</div>
+                  </div>
+                  <div className="prog-arrow" style={{ fontSize: 18 }}>
+                    {folder.programs.length > 1 ? (openFolder === folder.id ? "⌄" : "›") : "›"}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <div className="section-label">Cardio</div>
+            <div className="prog-card cardio-card" onClick={onCardio}>
+              <div className="prog-icon">🏃</div>
+              <div style={{ flex: 1 }}>
+                <div className="prog-name">Cardio Session</div>
+                <div className="prog-sub">Walk, Run, Bike, Elliptical, Swim</div>
+              </div>
+              <div className="prog-arrow">›</div>
+            </div>
           </div>
-          <div className="prog-arrow">›</div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
 
 // ── WORKOUT ───────────────────────────────────────────────────────────────────
-function WorkoutScreen({ workout, setWorkout, getLastSetWeight, mySets, onFinish, onBack }) {
+function WorkoutScreen({ workout, setWorkout, getLastSetWeight, mySets, theme, onFinish, onBack }) {
   const [showAddEx, setShowAddEx] = useState(false);
   const [showCardioSheet, setShowCardioSheet] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [timer, setTimer] = useState(elapsed(workout.startTime));
 
   // For custom programs, open exercise picker immediately
@@ -1189,6 +1667,7 @@ function WorkoutScreen({ workout, setWorkout, getLastSetWeight, mySets, onFinish
               optional={progEx?.optional}
               lastWeight={getLastSetWeight(exName)}
               lastSessionSets={mySets.filter(s => s.exercise === exName).slice(-10)}
+              restTimerSecs={workout.restTimerSecs || 90}
               onToggle={() => toggleExercise(exName)}
               onLog={(w, r, bw) => logSet(exName, w, r, bw)}
               onDelete={(i) => deleteSet(exName, i)}
@@ -1235,7 +1714,7 @@ function WorkoutScreen({ workout, setWorkout, getLastSetWeight, mySets, onFinish
       </div>
 
       <div className="finish-bar">
-        <button className="btn btn-green" onClick={onFinish}>Finish Workout</button>
+        <button className="btn btn-green" onClick={() => setShowFinishConfirm(true)}>{theme ? theme.finishLabel : "Finish Workout 🏁"}</button>
       </div>
 
       {/* Leave confirmation */}
@@ -1249,6 +1728,19 @@ function WorkoutScreen({ workout, setWorkout, getLastSetWeight, mySets, onFinish
           danger
           onConfirm={() => { setShowLeaveConfirm(false); onBack(); }}
           onCancel={() => setShowLeaveConfirm(false)}
+        />
+      )}
+
+      {/* Finish confirmation */}
+      {showFinishConfirm && (
+        <ConfirmDialog
+          icon="🏁"
+          title="Finish workout?"
+          body={`${totalSets} set${totalSets !== 1 ? "s" : ""} logged across ${workout.exercises.length} exercise${workout.exercises.length !== 1 ? "s" : ""}. Ready to wrap up?`}
+          confirmLabel="Yes, finish! 💪"
+          cancelLabel="Not yet"
+          onConfirm={() => { setShowFinishConfirm(false); onFinish(); }}
+          onCancel={() => setShowFinishConfirm(false)}
         />
       )}
 
@@ -1396,36 +1888,88 @@ function CardioFinisherSheet({ onClose, onLog }) {
   );
 }
 
+// ── REST TIMER HOOK ───────────────────────────────────────────────────────────
+function useRestTimer(seconds) {
+  const [remaining, setRemaining] = useState(null);
+  const [running, setRunning] = useState(false);
+  const intervalRef = useRef(null);
+
+  const start = () => {
+    setRemaining(seconds);
+    setRunning(true);
+  };
+
+  useEffect(() => {
+    if (running && remaining !== null) {
+      if (remaining <= 0) {
+        setRunning(false);
+        setRemaining(null);
+        return;
+      }
+      intervalRef.current = setInterval(() => {
+        setRemaining(r => {
+          if (r <= 1) { setRunning(false); clearInterval(intervalRef.current); return 0; }
+          return r - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [running]);
+
+  const reset = () => { clearInterval(intervalRef.current); setRunning(false); setRemaining(null); };
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  return { remaining, running, done: remaining === 0, start, reset, fmt };
+}
+
 // ── EXERCISE ITEM ─────────────────────────────────────────────────────────────
-function ExerciseItem({ name, isActive, loggedSets, guide, optional, lastWeight, lastSessionSets, onToggle, onLog, onDelete }) {
+function ExerciseItem({ name, isActive, loggedSets, guide, optional, lastWeight, lastSessionSets, restTimerSecs, onToggle, onLog, onDelete }) {
   const isBodyweightEx = BODYWEIGHT_EXERCISES.includes(name);
+  const isTimerEx = TIMER_EXERCISES.includes(name);
+  const isRepsOnly = REPS_ONLY_EXERCISES.includes(name);
+  const showWeight = !isBodyweightEx && !isTimerEx && !isRepsOnly;
   const [useBodyweight, setUseBodyweight] = useState(false);
   const [weight, setWeight] = useState(lastWeight !== "" ? String(lastWeight) : "");
   const [reps, setReps] = useState("");
+  const [seconds, setSeconds] = useState("");
   const repsRef = useRef(null);
+  const restTimer = useRestTimer(restTimerSecs || 90);
 
   useEffect(() => {
     if (loggedSets.length > 0) {
       const last = loggedSets[loggedSets.length - 1];
-      if (!last.isBodyweight) setWeight(String(last.weight));
+      if (!last.isBodyweight && last.weight) setWeight(String(last.weight));
       setUseBodyweight(!!last.isBodyweight);
     }
   }, [loggedSets.length]);
 
   const handleLog = () => {
-    if (!reps) return;
-    const w = useBodyweight ? 0 : (weight || 0);
-    onLog(w, reps, useBodyweight);
-    setReps("");
-    repsRef.current?.focus();
+    if (isTimerEx) {
+      if (!seconds) return;
+      onLog(0, Number(seconds), false);
+      setSeconds("");
+      restTimer.start();
+    } else {
+      if (!reps) return;
+      const w = useBodyweight ? 0 : (weight || 0);
+      onLog(w, reps, useBodyweight);
+      setReps("");
+      repsRef.current?.focus();
+      restTimer.start();
+    }
   };
 
   const lastSets = lastSessionSets.slice(-5);
 
   const setDisplay = (s) => {
+    if (isTimerEx) return `${s.reps}s hold`;
+    if (isRepsOnly) return `${s.reps} reps`;
     if (s.isBodyweight) return `BW × ${s.reps} reps`;
     return `${s.weight} lbs × ${s.reps} reps`;
   };
+
+  const isResting = restTimer.running;
+  const restDone = restTimer.done;
 
   return (
     <div className={`ex-item ${isActive ? "active" : ""}`}>
@@ -1434,67 +1978,134 @@ function ExerciseItem({ name, isActive, loggedSets, guide, optional, lastWeight,
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div className="ex-name">{name}</div>
             {optional && <span className="ex-optional">optional</span>}
+            {isTimerEx && <span style={{ fontSize: 11, background: "var(--accent-light)", color: "var(--accent)", borderRadius: 99, padding: "2px 6px", fontWeight: 700 }}>⏱ timer</span>}
           </div>
           {guide && <div className="ex-guide">{guide}</div>}
         </div>
         {loggedSets.length > 0 && <div className="ex-sets-count">{loggedSets.length}</div>}
+        {isResting && <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", marginLeft: 8 }}>⏱ {restTimer.fmt(restTimer.remaining)}</div>}
         <div style={{ marginLeft: 8, color: "var(--muted)", transform: isActive ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>⌄</div>
       </div>
 
       {isActive && (
-        <div className="ex-body">
+        <div className="ex-body" style={{ position: "relative" }}>
           {lastSets.length > 0 && (
             <div className="last-session">
               <span style={{ alignSelf: "center" }}>Last:</span>
               {lastSets.map((s, i) => (
                 <span key={i} className="last-tag">
-                  {s.isBodyweight ? `BW×${s.reps}` : `${s.weight}×${s.reps}`}
+                  {isTimerEx ? `${s.reps}s` : isRepsOnly ? `${s.reps}r` : s.isBodyweight ? `BW×${s.reps}` : `${s.weight}×${s.reps}`}
                 </span>
               ))}
             </div>
           )}
 
-          {/* Bodyweight toggle for pullups/dips */}
-          {isBodyweightEx && (
-            <label className="bw-toggle">
-              <input
-                type="checkbox"
-                checked={useBodyweight}
-                onChange={e => setUseBodyweight(e.target.checked)}
-              />
-              <span>Bodyweight only (no added weight)</span>
-            </label>
+          {/* BLOCKING REST TIMER OVERLAY — covers input area while resting */}
+          {isResting && (
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "rgba(var(--bg-rgb, 247,245,242), 0.96)",
+              backdropFilter: "blur(2px)",
+              borderRadius: 8,
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              gap: 10, zIndex: 10, padding: 20,
+            }}>
+              <div style={{ fontSize: 48, lineHeight: 1 }}>⏱</div>
+              <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 52, color: "var(--accent)", lineHeight: 1 }}>
+                {restTimer.fmt(restTimer.remaining)}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>Resting...</div>
+              <button
+                className="btn btn-secondary"
+                style={{ marginTop: 8, padding: "10px 24px" }}
+                onClick={restTimer.reset}
+              >
+                Skip Rest
+              </button>
+            </div>
           )}
 
-          <div className="log-row">
-            {!useBodyweight && (
-              <div className="log-field">
-                <input
-                  className="log-input"
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="lbs"
-                  value={weight}
-                  onChange={e => setWeight(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && repsRef.current?.focus()}
-                />
-                <div className="log-label">Weight</div>
-              </div>
-            )}
-            <div className="log-field">
-              <input
-                className="log-input"
-                type="number"
-                inputMode="numeric"
-                placeholder="reps"
-                value={reps}
-                onChange={e => setReps(e.target.value)}
-                ref={repsRef}
-                onKeyDown={e => e.key === "Enter" && handleLog()}
-              />
-              <div className="log-label">Reps</div>
+          {/* DONE banner */}
+          {restDone && (
+            <div
+              className="rest-timer-bar"
+              style={{ background: "var(--green-light)", borderColor: "var(--green)", marginBottom: 10, cursor: "pointer" }}
+              onClick={restTimer.reset}
+            >
+              <div style={{ fontSize: 18 }}>✅</div>
+              <div style={{ flex: 1, fontSize: 13, color: "var(--green)", fontWeight: 700 }}>Rest done — go again!</div>
+              <div style={{ fontSize: 12, color: "var(--muted)" }}>tap to clear</div>
             </div>
-          </div>
+          )}
+
+          {isTimerEx ? (
+            <>
+              <div style={{ marginBottom: 8, fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>Hold time (seconds)</div>
+              <div className="timer-preset-row">
+                {[20, 30, 45, 60, 90].map(s => (
+                  <button key={s} className="timer-preset-btn" onClick={() => setSeconds(String(s))}>{s}s</button>
+                ))}
+              </div>
+              <div className="timer-ex-row">
+                <div className="log-field">
+                  <input
+                    className="timer-ex-input"
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="sec"
+                    value={seconds}
+                    onChange={e => setSeconds(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleLog()}
+                  />
+                  <div className="log-label">Seconds</div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {isBodyweightEx && (
+                <label className="bw-toggle">
+                  <input
+                    type="checkbox"
+                    checked={useBodyweight}
+                    onChange={e => setUseBodyweight(e.target.checked)}
+                  />
+                  <span>Bodyweight only (no added weight)</span>
+                </label>
+              )}
+              <div className="log-row">
+                {(showWeight || (isBodyweightEx && !useBodyweight)) && (
+                  <div className="log-field">
+                    <input
+                      className="log-input"
+                      type="number"
+                      inputMode="decimal"
+                      placeholder="lbs"
+                      value={weight}
+                      onChange={e => setWeight(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && repsRef.current?.focus()}
+                    />
+                    <div className="log-label">Weight</div>
+                  </div>
+                )}
+                <div className="log-field">
+                  <input
+                    className="log-input"
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="reps"
+                    value={reps}
+                    onChange={e => setReps(e.target.value)}
+                    ref={repsRef}
+                    onKeyDown={e => e.key === "Enter" && handleLog()}
+                  />
+                  <div className="log-label">Reps</div>
+                </div>
+              </div>
+            </>
+          )}
+
           <button className="log-btn" onClick={handleLog}>Log Set</button>
 
           {loggedSets.length > 0 && (
@@ -1515,14 +2126,14 @@ function ExerciseItem({ name, isActive, loggedSets, guide, optional, lastWeight,
 }
 
 // ── SUMMARY ───────────────────────────────────────────────────────────────────
-function SummaryScreen({ data, user, onDone }) {
+function SummaryScreen({ data, user, theme, onDone }) {
   if (data.cardio) {
     const c = data.cardio;
     return (
       <div className="screen">
         <div className="summary-hero">
           <div className="summary-icon">{CARDIO_ICONS[c.type] || "🏃"}</div>
-          <div className="summary-title">Nice work!</div>
+          <div className="summary-title">{theme ? theme.summaryTitle : "Nice work!"}</div>
           <div className="summary-prog">{c.type}</div>
         </div>
         <div className="stats-grid">
@@ -1550,7 +2161,7 @@ function SummaryScreen({ data, user, onDone }) {
     <div className="screen">
       <div className="summary-hero">
         <div className="summary-icon">💪</div>
-        <div className="summary-title">Workout done!</div>
+        <div className="summary-title">{theme ? theme.summaryTitle : "Workout done!"}</div>
         <div className="summary-prog">{session.program} · {fmtDate(session.date)}</div>
         {session.cardioFinisher && (
           <div style={{ marginTop: 8, fontSize: 13, color: "var(--green)", fontWeight: 600 }}>
@@ -1586,6 +2197,242 @@ function SummaryScreen({ data, user, onDone }) {
       </div>
       <div style={{ padding: "0 20px" }}>
         <button className="btn btn-primary" onClick={onDone}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+
+// ── STATS SCREEN ──────────────────────────────────────────────────────────────
+function StatsScreen({ sessions, strengthSets, user, onBack }) {
+  const [tab, setTab] = useState("overview");
+  const [selectedEx, setSelectedEx] = useState(null);
+
+  const mySessions = sessions.filter(s => s.user === user);
+  const mySets = strengthSets.filter(s => s.user === user);
+
+  // ── Overview ──
+  const totalWorkouts = mySessions.length;
+  const totalVol = mySets.reduce((a, s) => a + (!s.isBodyweight ? (s.weight || 0) * (s.reps || 0) : 0), 0);
+  const totalSets = mySets.length;
+  const totalReps = mySets.reduce((a, s) => a + (s.reps || 0), 0);
+
+  // Volume by week (last 8 weeks)
+  const weekVol = (() => {
+    const weeks = {};
+    mySets.forEach(s => {
+      if (s.isBodyweight || !s.weight) return;
+      const d = new Date(s.date);
+      const startOfWeek = new Date(d);
+      startOfWeek.setDate(d.getDate() - d.getDay());
+      const key = startOfWeek.toISOString().split("T")[0];
+      weeks[key] = (weeks[key] || 0) + (s.weight * s.reps);
+    });
+    return Object.entries(weeks).sort(([a], [b]) => a > b ? 1 : -1).slice(-8);
+  })();
+
+  // ── PRs: best set weight per exercise ──
+  const prs = (() => {
+    const bests = {};
+    mySets.forEach(s => {
+      if (s.isBodyweight || !s.weight) return;
+      if (!bests[s.exercise] || s.weight > bests[s.exercise].weight) {
+        bests[s.exercise] = { weight: s.weight, reps: s.reps, date: s.date };
+      }
+    });
+    return Object.entries(bests).sort(([, a], [, b]) => b.weight - a.weight);
+  })();
+
+  // ── Per-exercise history ──
+  const exerciseList = [...new Set(mySets.map(s => s.exercise))].sort();
+  const exHistory = selectedEx
+    ? mySets.filter(s => s.exercise === selectedEx && !s.isBodyweight && s.weight)
+        .reduce((acc, s) => {
+          const last = acc[acc.length - 1];
+          if (last && last.date === s.date) {
+            if (s.weight > last.maxWeight) last.maxWeight = s.weight;
+            last.totalVol += s.weight * s.reps;
+          } else {
+            acc.push({ date: s.date, maxWeight: s.weight, totalVol: s.weight * s.reps });
+          }
+          return acc;
+        }, []).slice(-10)
+    : [];
+
+  const maxW = exHistory.length ? Math.max(...exHistory.map(p => p.maxWeight)) : 0;
+  const minW = exHistory.length ? Math.min(...exHistory.map(p => p.maxWeight)) : 0;
+  const chartH = 80;
+
+  const fmtVol = (v) => v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(v);
+
+  return (
+    <div className="screen">
+      <div className="header">
+        <button className="header-back" onClick={onBack}>←</button>
+        <div>
+          <div className="header-title">Stats</div>
+          <div className="header-sub">{user}</div>
+        </div>
+      </div>
+
+      {/* Tab bar */}
+      <div style={{ display: "flex", borderBottom: "1px solid var(--border)", background: "var(--bg)", padding: "0 16px" }}>
+        {[["overview","Overview"],["progress","Progress"],["prs","PRs"]].map(([id, label]) => (
+          <div
+            key={id}
+            onClick={() => setTab(id)}
+            style={{
+              padding: "12px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              color: tab === id ? "var(--accent)" : "var(--muted)",
+              borderBottom: tab === id ? "2px solid var(--accent)" : "2px solid transparent",
+              marginBottom: -1,
+            }}
+          >{label}</div>
+        ))}
+      </div>
+
+      <div className="screen-scroll">
+        {/* ── OVERVIEW ── */}
+        {tab === "overview" && (
+          <>
+            <div className="stats-grid" style={{ marginTop: 16 }}>
+              <div className="stat-card">
+                <div className="stat-val">{totalWorkouts}</div>
+                <div className="stat-label">Workouts</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-val">{fmtVol(totalVol)}</div>
+                <div className="stat-label">Total Volume</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-val">{totalSets}</div>
+                <div className="stat-label">Total Sets</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-val">{totalReps}</div>
+                <div className="stat-label">Total Reps</div>
+              </div>
+            </div>
+
+            {weekVol.length > 1 && (
+              <div className="card" style={{ marginTop: 8 }}>
+                <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Weekly Volume</div>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: chartH + 24 }}>
+                  {weekVol.map(([week, vol], i) => {
+                    const maxV = Math.max(...weekVol.map(([,v]) => v));
+                    const h = maxV ? Math.max(8, Math.round((vol / maxV) * chartH)) : 8;
+                    const isLast = i === weekVol.length - 1;
+                    return (
+                      <div key={week} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                        <div style={{ fontSize: 9, color: "var(--muted)", fontWeight: 600 }}>{fmtVol(vol)}</div>
+                        <div style={{ width: "100%", height: h, background: isLast ? "var(--accent)" : "var(--accent-light)", borderRadius: 4 }} />
+                        <div style={{ fontSize: 9, color: "var(--muted)" }}>{new Date(week).toLocaleDateString("en-US", { month: "numeric", day: "numeric" })}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {mySessions.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">📊</div>
+                <div className="empty-text">Log some workouts to see your stats</div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── PROGRESS (per-exercise chart) ── */}
+        {tab === "progress" && (
+          <>
+            <div className="section-label" style={{ marginTop: 16 }}>Choose Exercise</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+              {exerciseList.map(ex => (
+                <button
+                  key={ex}
+                  onClick={() => setSelectedEx(ex)}
+                  style={{
+                    padding: "7px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    background: selectedEx === ex ? "var(--accent)" : "var(--surface)",
+                    color: selectedEx === ex ? "white" : "var(--text)",
+                    border: selectedEx === ex ? "none" : "1px solid var(--border)",
+                  }}
+                >{ex}</button>
+              ))}
+            </div>
+
+            {selectedEx && exHistory.length > 0 && (
+              <div className="card">
+                <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{selectedEx}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Max weight per session</div>
+                {/* Line chart */}
+                <svg width="100%" height="100" viewBox={`0 0 ${exHistory.length * 40} 100`} style={{ overflow: "visible" }}>
+                  <polyline
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth="2"
+                    points={exHistory.map((p, i) => {
+                      const x = i * 40 + 20;
+                      const y = maxW === minW ? 50 : 90 - ((p.maxWeight - minW) / (maxW - minW)) * 70;
+                      return `${x},${y}`;
+                    }).join(" ")}
+                  />
+                  {exHistory.map((p, i) => {
+                    const x = i * 40 + 20;
+                    const y = maxW === minW ? 50 : 90 - ((p.maxWeight - minW) / (maxW - minW)) * 70;
+                    return (
+                      <g key={i}>
+                        <circle cx={x} cy={y} r="4" fill="var(--accent)" />
+                        <text x={x} y={y - 8} textAnchor="middle" fontSize="9" fill="var(--muted)">{p.maxWeight}</text>
+                        <text x={x} y="100" textAnchor="middle" fontSize="8" fill="var(--muted)">{new Date(p.date).toLocaleDateString("en-US",{month:"numeric",day:"numeric"})}</text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            )}
+
+            {selectedEx && exHistory.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">📈</div>
+                <div className="empty-text">No weighted sets logged for {selectedEx} yet</div>
+              </div>
+            )}
+
+            {!selectedEx && (
+              <div className="empty-state">
+                <div className="empty-icon">👆</div>
+                <div className="empty-text">Pick an exercise above to see your progress</div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── PRs ── */}
+        {tab === "prs" && (
+          <>
+            <div className="section-label" style={{ marginTop: 16 }}>Personal Records</div>
+            {prs.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">🏆</div>
+                <div className="empty-text">No PRs yet — go lift some weights!</div>
+              </div>
+            ) : prs.map(([ex, pr]) => (
+              <div key={ex} className="card" style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ fontSize: 24 }}>🏆</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{ex}</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{fmtDate(pr.date)}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 20, color: "var(--accent)" }}>{pr.weight} lbs</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{pr.reps} reps</div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
@@ -1650,17 +2497,25 @@ function CardioScreen({ user, onBack, onLog }) {
 }
 
 // ── HISTORY ───────────────────────────────────────────────────────────────────
-function HistoryScreen({ sessions, cardio, onBack, onDetail }) {
+const USER_COLORS = {
+  Cullen: { bg: "#FFF0EA", color: "#E8500A", border: "#ffc9b0" },
+  Lauren: { bg: "#EAF4EF", color: "#2D6A4F", border: "#b7ddc9" },
+};
+
+function HistoryScreen({ allSessions, allCardio, onBack, onDetail }) {
   const all = [
-    ...sessions.map(s => ({ ...s, _type: "strength" })),
-    ...cardio.map(c => ({ ...c, _type: "cardio" })),
-  ].sort((a, b) => (b.date > a.date ? 1 : -1));
+    ...allSessions.map(s => ({ ...s, _type: "strength" })),
+    ...allCardio.map(c => ({ ...c, _type: "cardio" })),
+  ].sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
 
   return (
     <div className="screen">
       <div className="header">
         <button className="header-back" onClick={onBack}>←</button>
-        <div className="header-title">History</div>
+        <div>
+          <div className="header-title">History</div>
+          <div className="header-sub">Cullen &amp; Lauren</div>
+        </div>
       </div>
       <div className="screen-scroll">
         {all.length === 0 ? (
@@ -1668,11 +2523,17 @@ function HistoryScreen({ sessions, cardio, onBack, onDetail }) {
             <div className="empty-icon">📋</div>
             <div className="empty-text">No workouts logged yet</div>
           </div>
-        ) : all.map((item, i) => (
-          item._type === "strength" ? (
+        ) : all.map((item, i) => {
+          const uc = USER_COLORS[item.user] || USER_COLORS.Cullen;
+          return item._type === "strength" ? (
             <div key={i} className="hist-item" onClick={() => onDetail(item)}>
               <div className="hist-header">
-                <div className="hist-name">{item.program}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: uc.bg, border: `1.5px solid ${uc.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: uc.color, flexShrink: 0 }}>
+                    {item.user ? item.user[0] : "?"}
+                  </div>
+                  <div className="hist-name">{item.program}</div>
+                </div>
                 <span className="badge badge-orange">Strength</span>
               </div>
               <div className="hist-date">{fmtDate(item.date)}</div>
@@ -1684,44 +2545,104 @@ function HistoryScreen({ sessions, cardio, onBack, onDetail }) {
           ) : (
             <div key={i} className="hist-item" style={{ cursor: "default" }}>
               <div className="hist-header">
-                <div className="hist-name">{CARDIO_ICONS[item.type]} {item.type}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: uc.bg, border: `1.5px solid ${uc.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: uc.color, flexShrink: 0 }}>
+                    {item.user ? item.user[0] : "?"}
+                  </div>
+                  <div className="hist-name">{CARDIO_ICONS[item.type]} {item.type}</div>
+                </div>
                 <span className="badge badge-green">Cardio</span>
               </div>
               <div className="hist-date">{fmtDate(item.date)}</div>
               <div className="hist-meta" style={{ marginTop: 4 }}>{item.duration} min</div>
             </div>
-          )
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
 // ── HIST DETAIL ───────────────────────────────────────────────────────────────
-function HistDetailScreen({ session, onBack }) {
+function HistDetailScreen({ session, onBack, onDelete, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const [editSets, setEditSets] = useState(session.sets ? JSON.parse(JSON.stringify(session.sets)) : {});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const fmtSet = (s) => s.isBodyweight ? `BW × ${s.reps}` : `${s.weight} lbs × ${s.reps}`;
+
+  const deleteSet = (ex, idx) => {
+    setEditSets(prev => {
+      const updated = { ...prev, [ex]: prev[ex].filter((_, i) => i !== idx) };
+      if (updated[ex].length === 0) delete updated[ex];
+      return updated;
+    });
+  };
+
+  const updateSetField = (ex, idx, field, val) => {
+    setEditSets(prev => ({
+      ...prev,
+      [ex]: prev[ex].map((s, i) => i === idx ? { ...s, [field]: field === "isBodyweight" ? val : Number(val) } : s),
+    }));
+  };
+
+  const handleSave = () => {
+    onUpdate({ ...session, sets: editSets });
+    setEditing(false);
+  };
+
+  const allSets = Object.values(editSets).flat();
+  const totalVol = allSets.reduce((a, s) => a + (!s.isBodyweight ? (s.weight || 0) * (s.reps || 0) : 0), 0);
+
   return (
     <div className="screen">
       <div className="header">
         <button className="header-back" onClick={onBack}>←</button>
-        <div>
+        <div style={{ flex: 1 }}>
           <div className="header-title">{session.program}</div>
           <div className="header-sub">{fmtDate(session.date)} · {session.duration}m</div>
         </div>
+        {!editing && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              className="btn btn-secondary"
+              style={{ padding: "8px 14px", fontSize: 13 }}
+              onClick={() => { setEditSets(JSON.parse(JSON.stringify(session.sets || {}))); setEditing(true); }}
+            >
+              ✏️ Edit
+            </button>
+            <button
+              className="btn"
+              style={{ padding: "8px 14px", fontSize: 13, background: "#FFF0EA", color: "var(--accent)", border: "1px solid #ffc9b0" }}
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              🗑️
+            </button>
+          </div>
+        )}
+        {editing && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn btn-primary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={handleSave}>Save</button>
+            <button className="btn btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={() => setEditing(false)}>Cancel</button>
+          </div>
+        )}
       </div>
+
       <div className="screen-scroll">
+        {/* Stats summary */}
         <div className="card" style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", gap: 24 }}>
             <div>
-              <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 22, color: "var(--accent)" }}>{session.totalSets}</div>
+              <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 22, color: "var(--accent)" }}>{allSets.length}</div>
               <div style={{ fontSize: 12, color: "var(--muted)" }}>Sets</div>
             </div>
             <div>
-              <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 22, color: "var(--accent)" }}>{session.totalReps}</div>
+              <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 22, color: "var(--accent)" }}>{allSets.reduce((a, s) => a + (s.reps || 0), 0)}</div>
               <div style={{ fontSize: 12, color: "var(--muted)" }}>Reps</div>
             </div>
             <div>
               <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 22, color: "var(--accent)" }}>
-                {session.totalVol >= 1000 ? (session.totalVol / 1000).toFixed(1) + "k" : session.totalVol}
+                {totalVol >= 1000 ? (totalVol / 1000).toFixed(1) + "k" : totalVol}
               </div>
               <div style={{ fontSize: 12, color: "var(--muted)" }}>Volume</div>
             </div>
@@ -1732,16 +2653,152 @@ function HistDetailScreen({ session, onBack }) {
             </div>
           )}
         </div>
-        {session.sets && Object.entries(session.sets).map(([ex, sets]) => (
+
+        {/* Exercise sets — view or edit mode */}
+        {Object.entries(editing ? editSets : (session.sets || {})).map(([ex, sets]) => (
           <div key={ex} className="detail-exercise card">
             <div className="detail-ex-name">{ex}</div>
             {sets.map((s, i) => (
-              <div key={i} className="detail-set">
-                Set {i + 1}: {s.isBodyweight ? `BW × ${s.reps} reps` : `${s.weight} lbs × ${s.reps} reps`}
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < sets.length - 1 ? "1px solid var(--border)" : "none" }}>
+                <div className="set-num">{i + 1}</div>
+                {editing ? (
+                  <>
+                    {!s.isBodyweight && (
+                      <input
+                        type="number" inputMode="decimal"
+                        value={s.weight}
+                        onChange={e => updateSetField(ex, i, "weight", e.target.value)}
+                        style={{ width: 64, padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13, textAlign: "center", background: "var(--bg)" }}
+                      />
+                    )}
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>×</span>
+                    <input
+                      type="number" inputMode="numeric"
+                      value={s.reps}
+                      onChange={e => updateSetField(ex, i, "reps", e.target.value)}
+                      style={{ width: 52, padding: "6px 8px", border: "1px solid var(--border)", borderRadius: 6, fontSize: 13, textAlign: "center", background: "var(--bg)" }}
+                    />
+                    <span style={{ fontSize: 12, color: "var(--muted)", flex: 1 }}>{s.isBodyweight ? "BW" : "lbs"}</span>
+                    <div style={{ color: "var(--accent)", cursor: "pointer", fontSize: 18, padding: "2px 4px" }} onClick={() => deleteSet(ex, i)}>×</div>
+                  </>
+                ) : (
+                  <div className="detail-set" style={{ flex: 1, padding: 0 }}>{fmtSet(s)}</div>
+                )}
               </div>
             ))}
+            {sets.length === 0 && editing && (
+              <div style={{ fontSize: 12, color: "var(--muted)", padding: "4px 0", fontStyle: "italic" }}>No sets — exercise will be removed on save</div>
+            )}
           </div>
         ))}
+      </div>
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          icon="🗑️"
+          title="Delete workout?"
+          body="This will permanently remove this session and all its sets from your history."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          danger
+          onConfirm={() => onDelete(session.sessionId)}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+
+// ── REST TIMER SELECT SCREEN ──────────────────────────────────────────────────
+function RestTimerSelectScreen({ program, defaultSecs, user, onBack, onStart }) {
+  const [selected, setSelected] = useState(defaultSecs || 90);
+
+  const descs = { 60: "Quick compound lifts, high volume", 90: "Most people, most of the time", 120: "Heavy lifts, low reps" };
+
+  return (
+    <div className="screen rest-select-screen">
+      <div className="header">
+        <button className="header-back" onClick={onBack}>←</button>
+        <div>
+          <div className="header-title">{program.name}</div>
+          <div className="header-sub">Pick your rest timer</div>
+        </div>
+      </div>
+      <div className="rest-hero">
+        <div className="rest-hero-icon">⏱️</div>
+        <div className="rest-hero-title">Rest Between Sets</div>
+        <div className="rest-hero-sub">Your timer starts automatically after each logged set</div>
+      </div>
+      <div className="rest-options">
+        {REST_TIMER_OPTIONS.map(opt => (
+          <div
+            key={opt.seconds}
+            className={`rest-option-btn ${selected === opt.seconds ? "selected" : ""}`}
+            onClick={() => setSelected(opt.seconds)}
+          >
+            <div className="rest-option-emoji">{opt.emoji}</div>
+            <div style={{ flex: 1 }}>
+              <div className="rest-option-label">{opt.label}</div>
+              <div className="rest-option-desc">{descs[opt.seconds]}</div>
+            </div>
+            {selected === opt.seconds && <div style={{ fontSize: 20 }}>✓</div>}
+          </div>
+        ))}
+      </div>
+      <div className="rest-start-btn">
+        <button className="btn btn-primary" onClick={() => onStart(selected)}>
+          Start Workout →
+        </button>
+        {user === "Cullen" && (
+          <button
+            className="btn btn-ghost"
+            style={{ width: "100%", marginTop: 10, color: "var(--muted)", fontSize: 14 }}
+            onClick={() => onStart(null)}
+          >
+            Skip rest timer
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── THEME MENU ────────────────────────────────────────────────────────────────
+function ThemeMenu({ theme, onTheme, onClose, onSwitchUser }) {
+  return (
+    <div className="menu-overlay" onClick={onClose}>
+      <div className="menu-panel" onClick={e => e.stopPropagation()}>
+        <div className="menu-title">⚙️ Settings</div>
+
+        <div className="menu-section-label">Themes</div>
+        {Object.entries(THEMES).map(([key, t]) => (
+          <div
+            key={key}
+            className={`theme-btn ${theme === key ? "active" : ""}`}
+            onClick={() => onTheme(key)}
+          >
+            <div className="theme-btn-emoji">{t.emoji}</div>
+            <div>{t.name}</div>
+            {theme === key && <div style={{ marginLeft: "auto", fontSize: 16 }}>✓</div>}
+          </div>
+        ))}
+
+        <div className="menu-section-label" style={{ marginTop: 32 }}>Account</div>
+        <button
+          className="btn btn-secondary"
+          style={{ width: "100%", marginBottom: 12, justifyContent: "flex-start", gap: 10 }}
+          onClick={onSwitchUser}
+        >
+          👤 Switch User
+        </button>
+        <button
+          className="btn btn-ghost"
+          style={{ width: "100%", justifyContent: "flex-start" }}
+          onClick={onClose}
+        >
+          ✕ Close
+        </button>
       </div>
     </div>
   );
@@ -1755,6 +2812,7 @@ function BottomNav({ tab, onTab }) {
         { id: "home", icon: "🏠", label: "Home" },
         { id: "programs", icon: "💪", label: "Workout" },
         { id: "history", icon: "📋", label: "History" },
+        { id: "stats", icon: "📊", label: "Stats" },
       ].map(n => (
         <div key={n.id} className={`nav-item ${tab === n.id ? "active" : ""}`} onClick={() => onTab(n.id)}>
           <div className="nav-icon">{n.icon}</div>
